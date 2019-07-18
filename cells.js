@@ -5,6 +5,55 @@ const ALIVE_CELL = '\u25A0';
 const GRID_WIDTH = 7;
 
 
+class Rule {
+    constructor(childrenRules){
+        this.childrenRules = childrenRules;
+    }
+
+    computeChild(leftParent, middleParent, rightParent){
+        // indices are reversed, that's why 7- is prepended
+        let ruleIndex = 7 - 2 * ((2 * leftParent) + middleParent) + rightParent;
+
+        return this.childrenRules[ruleIndex];
+    }
+
+    computeGeneration(parents){
+        let cellsCount = parents.length;
+        let offspring = Array(cellsCount);
+
+        // account for the cycling in the extremes
+        offspring[0] = this.computeChild(
+            parents[cellsCount - 1],
+            parents[0],
+            parents[1]
+        );
+        offspring[cellsCount - 1] = this.computeChild(
+            parents[cellsCount - 2],
+            parents[cellsCount - 1],
+            parents[0],
+        );
+
+        for(let i = 1; i < cellsCount - 1; ++i){
+            offspring[i] = this.computeChild(
+                parents[i - 1],
+                parents[i],
+                parents[i + 1]
+            );
+        }
+
+        return offspring;
+    }
+
+    static fromNumber(number){
+        let childrenRules = number
+            .toString(2).padStart(8, '0').split('')
+            .map(bit => parseInt(bit, 2));
+
+        return new Rule(childrenRules);
+    }
+}
+
+
 let translateToBinary = chars => {
     const translator = {
         [DEAD_CELL]: 0,
@@ -21,67 +70,30 @@ let translateToChars = binary => {
 };
 
 
-let rule110 = parents => {
-    let parentIndex = parents[0] * 4 + parents[1] * 2 + parents[2];
-    return [0, 1, 1, 1, 0, 1, 1, 0][parentIndex];
-};
-
-let computeGeneration = parents => {
-    let offspring = Array(GRID_WIDTH);
-
-    // account for the cycling in the extremes
-    offspring[0] = rule110([
-        parents[GRID_WIDTH - 1],
-        parents[0],
-        parents[1]
-    ]);
-    offspring[GRID_WIDTH - 1] = rule110([
-        parents[GRID_WIDTH - 2],
-        parents[GRID_WIDTH - 1],
-        parents[0],
-    ]);
-
-    for(let i = 1; i < GRID_WIDTH - 1; ++i){
-        offspring[i] = rule110([
-            parents[i - 1],
-            parents[i],
-            parents[i + 1]
-        ]);
-    }
-
-    return offspring;
-};
-
-let computeUntilToday = (lastUpdate, parents, startDay) => {
+let computeUntilToday = (rule, parents, lastUpdate, startDay) => {
     let today = DateTime.local().startOf('day'),
         remainingDays = today.diff(lastUpdate).as('days'),
         endDay = startDay + remainingDays;
-    let generation = computeGeneration(parents);
-    let output = startDay === 0 ? '\n' : '';
 
-    console.log(startDay, endDay, remainingDays);
-    console.log(parents);
-    console.log(generation);
+    let generationsNeededCount = Math.ceil(endDay / GRID_WIDTH);
+    let generations = [parents];
 
-    if(startDay + remainingDays > GRID_WIDTH){
-        // need to compute next week
-        let nextGeneration = computeGeneration(generation);
-
-        output += (
-            translateToChars(generation.slice(startDay, GRID_WIDTH))
-                + '\n'
-                + translateToChars(nextGeneration.slice(0, endDay % GRID_WIDTH))
-        );
-    } else {
-        output += translateToChars(generation.slice(startDay, endDay));
+    for(let i = 0; i < generationsNeededCount; ++i){
+        generations.push(rule.computeGeneration(generations[i]));
     }
 
-    return output;
+    generations.splice(0, 1);  // remove the original parents,we don't need them
+
+    generations[0] = generations[0].slice(startDay);
+    generations[generationsNeededCount - 1] = generations[generationsNeededCount - 1].slice(0, endDay % GRID_WIDTH);
+
+    return generations;
 };
 
 
 module.exports = {
     computeUntilToday,
     DEAD_CELL,
+    Rule,
     translateToBinary
 };
