@@ -1,4 +1,4 @@
-const { computeUntilToday, DEAD_CELL, translateToBinary } = require('./cells.js');
+const { computeUntilToday, DEAD_CELL, Rule, translateToBinary } = require('./cells.js');
 const DateTime = require('luxon').DateTime;
 const execSync = require('child_process').execSync;
 const fs = require('fs');
@@ -39,7 +39,10 @@ let updateFile = () => {
                 startDay = lastLines[1].length;
             }
 
-            let result = computeUntilToday(lastUpdate, parents, startDay);
+            let rule110 = Rule.fromNumber(110);
+            let result = computeUntilToday(
+                rule110, parents, lastUpdate, startDay
+            );
 
             if(result[result.length - 1] === DEAD_CELL){
                 return false;
@@ -53,34 +56,22 @@ let updateFile = () => {
 };
 
 let cloneRepository = () => {
-    return execSync(
-        `git clone ${REPO_URL} ${LOCAL_CLONE_PATH}`
-    );
+    return execSync(`bash clone.bash ${REPO_URL}`);
 };
 
 let pushChanges = () => {
-    let options = {
-        'cwd': LOCAL_CLONE_PATH
-    };
-
-    let today = DateTime.local().toFormat('dd/MM/yyyy');
-
-    execSync(`git add ${CELLS_FILENAME}`, options);
-
-    execSync(
-        'git -c user.name="cell-invaders"'
-            + ` -c user.email="${process.env.GITHUB_EMAIL}"`
-            + ` commit -m "Commit for ${today}"`,
-        options
-    );
-
     let credentials = `cell-invaders:${process.env.GITHUB_TOKEN}`;
     let [scheme, host] = REPO_URL.split('://');
     let pushUrl = scheme + '://' + credentials + '@' + host;
 
-    execSync(`git push ${pushUrl} master`, options);
+    execSync(`bash push.bash ${pushUrl}`);
 };
 
 cloneRepository();
-updateFile();
-pushChanges();
+let updateResult = updateFile();
+
+updateResult.then(hasUpdated => {
+    if(hasUpdated){
+        pushChanges();
+    }
+});
