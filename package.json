@@ -4,7 +4,8 @@
   "description": "Cellular automaton art using GitHub's activity graph",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node noop.js",
+    "test": "jest"
   },
   "author": "Nacho Mas",
   "license": "GPL-3.0",
