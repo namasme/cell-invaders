@@ -1,4 +1,7 @@
-const { computeUntilToday, DEAD_CELL, Rule, translateToBinary } = require('./cells.js');
+const {
+    computeUntilToday, DEAD_CELL, Rule,
+    translateToBinary, translateToChars
+} = require('./cells.js');
 const DateTime = require('luxon').DateTime;
 const execSync = require('child_process').execSync;
 const fs = require('fs');
@@ -20,7 +23,7 @@ let updateFile = () => {
           .toString()
           .trim();
     const lastUpdate = DateTime
-          .fromMillis(1000 * lastUpdateTimestamp)
+          .fromSeconds(+lastUpdateTimestamp)
           .startOf('day');
 
     return readLastLines.read(CELLS_FILE_PATH, 2)
@@ -43,6 +46,11 @@ let updateFile = () => {
             let result = computeUntilToday(
                 rule110, parents, lastUpdate, startDay
             );
+
+            console.log(rule110, parents, lastUpdate, startDay);
+            console.log('result', result);
+            result = result.map(translateToChars).join('\n');
+            console.log('result repr', result);
 
             if(result[result.length - 1] === DEAD_CELL){
                 return false;
