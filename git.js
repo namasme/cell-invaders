@@ -9,7 +9,6 @@ const path = require('path');
 const readLastLines = require('read-last-lines');
 
 const pjson = require('./package.json');
-const BEGIN_DATE = DateTime.fromISO('2019-08-15');
 const LOCAL_CLONE_PATH = path.join(process.cwd(), 'tmp');
 const CELLS_FILENAME = 'cells.txt';
 const CELLS_FILE_PATH = path.join(LOCAL_CLONE_PATH, CELLS_FILENAME);
@@ -47,16 +46,15 @@ let updateFile = () => {
                 rule110, parents, lastUpdate, startDay
             );
 
-            console.log(rule110, parents, lastUpdate, startDay);
-            console.log('result', result);
-            result = result.map(translateToChars).join('\n');
-            console.log('result repr', result);
+            let output = result.map(translateToChars).join('\n');
 
-            if(result[result.length - 1] === DEAD_CELL){
+            if(output[output.length - 1] === DEAD_CELL){
                 return false;
+            } else if(startDay === 0){
+                output = '\n' + output;
             }
 
-            fs.appendFileSync(CELLS_FILE_PATH, result, 'utf8');
+            fs.appendFileSync(CELLS_FILE_PATH, output, 'utf8');
 
             return true;
     });
