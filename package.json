@@ -16,7 +16,7 @@
     }
   },
   "dependencies": {
-    "luxon": "^1.16.1",
+    "luxon": "^2.5.2",
     "read-last-lines": "^1.7.1"
   },
   "devDependencies": {
